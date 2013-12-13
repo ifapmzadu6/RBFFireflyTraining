@@ -13,6 +13,7 @@
 #include <vector>
 #include <random>
 #include <functional>
+#include <limits>
 
 #include "Eigen/Dense"
 
@@ -118,6 +119,8 @@ private:
     
     std::random_device random;
     
+    std::mt19937 mt;
+    std::uniform_real_distribution<double> score;
     
 public:
     FireflyRBFTraining(int dim, int dataCount, int rbfCount, int fireflyCount, double attractiveness, double gumma, int iteration) {
@@ -132,6 +135,8 @@ public:
         this->bestFireflyIndex = 0;
         this->sigma = 0.5;
         this->eps = 10e-6;
+        this->mt = std::mt19937(random());
+        this->score = std::uniform_real_distribution<double>(0.0, 1.0f);
         
         std::mt19937 mt(random());
         std::uniform_real_distribution<double> score(0.0, 1.0);
@@ -168,8 +173,6 @@ public:
     void training(const std::vector<Eigen::VectorXd> &input, const std::vector<Eigen::VectorXd> &output) {
         std::cout << "Start training!" << std::endl;
         
-        std::mt19937 mt(random());
-        std::uniform_real_distribution<double> score(0.0, 1.0);
         std::vector<Eigen::VectorXd> tmpInput(dataCount);
         
         int iMax = 0;
@@ -181,35 +184,28 @@ public:
         //fitnessの値のキャッシュ
         std::vector<double> fitnesses(fireflyCount);
         for (int i = 0; i < fireflyCount; i++) {
-            fitnesses[i] = 0.0;
+            for (int k = 0; k < dataCount; k++) {
+                tmpInput[k] = fireflies[i].output(input[k]);
+            }
+            fitnesses[i] = fitness(tmpInput, output);
         }
+        
         while (iter < iteration) {
-            cp = (double)iter / (double)iteration;
+            cp = (double)iter / iteration;
             for (int i = 0; i < fireflyCount; i++) {
                 for (int j = 0; j < fireflyCount; j++) {
-                    //fireflyを選んでfitness計算。キャッシュになければ計算
-                    if (fitnesses[i] == 0.0) {
-                        for (int k = 0; k < dataCount; k++) {
-                            tmpInput[k] = fireflies[i].output(input[k]);
-                        }
-                        fitnesses[i] = fitness(tmpInput, output);
-                    }
-                    if (fitnesses[j] == 0.0) {
-                        for (int k = 0; k < dataCount; k++) {
-                            tmpInput[k] = fireflies[j].output(input[k]);
-                        }
-                        fitnesses[j] = fitness(tmpInput, output);
-                    }
-                    
                     //もしfitnessが良ければそのfireflyに近づく
                     if (fitnesses[i] < fitnesses[j]) {
                         //下のコメントアウトを外せばNetwork-Structured Firefly Algorithm
 //                        if (connection[i][j]) {
                             rij = distanceBetweenTwoFireflies(fireflies[i], fireflies[j]);
                             beta = (attractiveness - attractivenessMin) * exp(-gumma * rij) + attractivenessMin;
-                            moveFirefly(fireflies[i], fireflies[j], beta, sigmaT, mt, score);
-                            //移動することでfitnessの値が変わるのでキャッシュから削除
-                            fitnesses[i] = 0.0;
+                            moveFirefly(fireflies[i], fireflies[j], beta, sigmaT);
+                            //移動することでfitnessの値が変わるので再計算
+                            for (int k = 0; k < dataCount; k++) {
+                                tmpInput[k] = fireflies[i].output(input[k]);
+                            }
+                            fitnesses[i] = fitness(tmpInput, output);
 //                        }
 //                        else if (score(mt) <= cp)
 //                            connection[i][j] = true;
@@ -236,7 +232,7 @@ public:
                 }
             }
             //一番いいfireflyはランダムに移動
-            randomlyWalk(fireflies[iMax], score, mt, sigmaT);
+            randomlyWalk(fireflies[iMax], sigmaT);
             //キャッシュから削除
             fitnesses[iMax] = 0.0;
             
@@ -272,32 +268,33 @@ public:
     //各要素の距離
     double distanceBetweenTwoFireflies(const Firefly &firefly1, const Firefly &firefly2) const {
         double radius = 0.0;
+        double tmp;
         
         for (int i = 0; i < rbfCount; i++) {
             for (int j = 0; j < dim; j++) {
-                double tmp = firefly1.weights(i, j) - firefly2.weights(i, j);
+                tmp = firefly1.weights(i, j) - firefly2.weights(i, j);
                 radius += tmp * tmp;
             }
             
-            double tmp1 = (firefly1.spreads[i] - firefly2.spreads[i]);
-            radius += tmp1 * tmp1;
+            tmp = (firefly1.spreads[i] - firefly2.spreads[i]);
+            radius += tmp * tmp;
             
             for (int j = 0; j < dim; j++) {
-                double tmp = firefly1.centerVector[i](j) - firefly2.centerVector[i](j);
+                tmp = firefly1.centerVector[i](j) - firefly2.centerVector[i](j);
                 radius += tmp * tmp;
             }
         }
         
         for (int i = 0; i < dim; i++) {
-            double tmp2 = (firefly1.biases[i] - firefly2.biases[i]);
-            radius += tmp2 * tmp2;
+            tmp = (firefly1.biases[i] - firefly2.biases[i]);
+            radius += tmp * tmp;
         }
         
         return radius;
     }
     
     //firefly <- (1-beta)*firefly + beta*firefly + (rand-1/2)
-    void moveFirefly(Firefly &firefly, const Firefly &destinationFirefly, double beta, double sigma, std::mt19937 mt, std::uniform_real_distribution<double> score) {
+    void moveFirefly(Firefly &firefly, const Firefly &destinationFirefly, double beta, double sigma) {
         for (int i = 0; i < rbfCount; i++) {
             for (int j = 0; j < dim; j++) {
                 firefly.weights(i, j) = (1 - beta) * firefly.weights(i, j) + beta * destinationFirefly.weights(i, j) + sigma * (score(mt) - 0.5);
@@ -316,7 +313,7 @@ public:
     }
     
     //ランダムに移動　t <- t + sigma*(rand-1/2)
-    void randomlyWalk(Firefly &firefly , std::uniform_real_distribution<double> score, std::mt19937 mt, double sigma) {
+    void randomlyWalk(Firefly &firefly , double sigma) {
         for (int i = 0; i < rbfCount; i++) {
             for (int j = 0; j < dim; j++) {
                 firefly.weights(i, j) += sigma * (score(mt) - 0.5);

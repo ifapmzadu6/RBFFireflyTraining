@@ -27,8 +27,8 @@ int main(int argc, char *argv[])
     int dataCount = 1200;
     int offset = 7;
     int rbfCount = 100;
-    int fireflyCount = 100;
-    int iteration = 40;
+    int fireflyCount = 500;
+    int iteration = 50;
     
     int startDataCount = 100000;
     
@@ -68,19 +68,19 @@ int main(int argc, char *argv[])
 //    mt19937 mt(random());
 //    uniform_real_distribution<double> score(0.0, dataCount - dim * offset);
     
-    VectorXd xv(dim), yv(dim);
-    for (int i = 0; i < dataCount; i++) {
-//        int rand = score(mt);
-		for (int j = 0; j < dim; j++) {
-			xv[j] = tmp[startDataCount + i + j * offset];
-		}
-		input.push_back(xv);
-        
-		for (int j = 0; j < dim; j++) {
-			yv[j] = tmp[startDataCount + i + j * offset + 1];
-		}
-		output.push_back(yv);
-	}
+//    VectorXd xv(dim), yv(dim);
+//    for (int i = 0; i < dataCount; i++) {
+////        int rand = score(mt);
+//		for (int j = 0; j < dim; j++) {
+//			xv[j] = tmp[startDataCount + i + j * offset];
+//		}
+//		input.push_back(xv);
+//        
+//		for (int j = 0; j < dim; j++) {
+//			yv[j] = tmp[startDataCount + i + j * offset + 1];
+//		}
+//		output.push_back(yv);
+//	}
     
 //    for (int i = 0; i < dataCount; i++) {
 //		Eigen::VectorXd xv(dim), yv(dim);
@@ -96,18 +96,18 @@ int main(int argc, char *argv[])
 //	}
     
     //ロジスティック写像を使うとき
-//    double x = 0.01;
-//    Eigen::VectorXd tmpVector(1);
-//    tmpVector(0) = x;
-//    input.push_back(tmpVector);
-//    for (int i = 0; i < dataCount; i++) {
-//        x = LogisticMap(x);
-//        tmpVector(0) = x;
-//        if (i < dataCount - 1) {
-//            input.push_back(tmpVector);
-//        }
-//        output.push_back(tmpVector);
-//    }
+    double x = 0.0001;
+    Eigen::VectorXd tmpVector(1);
+    tmpVector(0) = x;
+    input.push_back(tmpVector);
+    for (int i = 0; i < dataCount; i++) {
+        x = LogisticMap(x);
+        tmpVector(0) = x;
+        if (i < dataCount - 1) {
+            input.push_back(tmpVector);
+        }
+        output.push_back(tmpVector);
+    }
     
     FireflyRBFTraining fireflyRBF(dim, dataCount, rbfCount, fireflyCount, 1.0, 0.1, iteration);
     
@@ -119,22 +119,22 @@ int main(int argc, char *argv[])
 //        ofs << i << " " << fp[i] << std::endl;
 //    }
     
-    VectorXd tmpInput(dim);
-    for (int i = 0; i < dim; i++) {
-        tmpInput(i) = input[0](i);
-    }
-    for (int i = 0; i < 1000; i++) {
-        ofs << i << " " << output[i](0) << " ";
-//        tmpInput = fireflyRBF.output(tmpInput);
-//        ofs << tmpInput(0);
-        ofs << endl;
-    };
-    
-//    for (double x = 0; x < 1.0; x += 0.01) {
-//        Eigen::VectorXd tmpVector(1);
-//        tmpVector[0] = x;
-//        ofs << x << " " << LogisticMap(x) << " " << fireflyRBF.output(tmpVector) << std::endl;
+//    VectorXd tmpInput(dim);
+//    for (int i = 0; i < dim; i++) {
+//        tmpInput(i) = input[0](i);
 //    }
+//    for (int i = 0; i < 1000; i++) {
+//        ofs << i << " " << output[i](0) << " ";
+////        tmpInput = fireflyRBF.output(tmpInput);
+////        ofs << tmpInput(0);
+//        ofs << endl;
+//    };
+    
+    for (double x = 0; x < 1.0; x += 0.01) {
+        Eigen::VectorXd tmpVector(1);
+        tmpVector[0] = x;
+        ofs << x << " " << LogisticMap(x) << " " << fireflyRBF.output(tmpVector) << std::endl;
+    }
     
     ofs.close();
     
