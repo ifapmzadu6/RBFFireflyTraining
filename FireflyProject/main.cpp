@@ -14,7 +14,6 @@
 #include "FireflyRBFTraining.h"
 #include "Wave.h"
 #include "analysis.h"
-#include "KKMatrix.h"
 
 double weights[][3] = {{-0.305027, 0.0971567, -0.367844}, {-0.168374, -0.0695188, 0.422483}, {0.408999, 0.426238, -0.135289}, {0.299042, 0.566475, -0.0987479}, {0.288779, 0.209859, -0.340822}, {-0.114781, 1.53094, 1.14045}, {0.34379, -0.97804, 0.112161}, {0.697856, -0.488666, -0.345905}, {-0.0654348, 0.40639, 0.203997}, {-1.27312, -0.449056, 0.946447}, {-0.396839, 0.352684, -0.236259}, {-0.123669, 0.502593, -0.537179}, {-0.609315, -0.518542, 0.106263}, {-0.00627391, 0.619307, 0.0236837}, {-0.0908562, -0.14458, 0.397014}, {-0.172048, -0.0365592, -0.0481878}, {-0.334103, -0.562332, 0.0919597}, {0.165457, -0.111763, -0.491118}, {0.165515, 0.338808, -0.212554}, {-0.123109, 0.309653, 0.0139856}, {-0.420498, 0.0632495, 0.176763}, {0.95457, 0.276299, 0.103619}, {0.886284, 1.03954, 0.380155}, {0.667344, -0.332481, -0.505391}, {0.15481, 0.38323, 0.112439}, {0.0906148, -0.475528, -0.384688}, {0.14076, -0.13693, 0.28136}, {0.53659, -0.0806092, 0.857337}, {0.691417, -0.507082, 0.0895721}, {0.668149, -0.241649, 0.353674}, {0.0245127, 0.288015, -0.716752}, {-0.114324, 0.182263, 0.575759}, {-0.361776, -0.156882, 0.336526}, {0.130157, 0.228629, 0.420846}, {-0.962736, 0.358889, -0.0490939}, {-0.0419001, -0.240568, 0.597034}, {0.118962, 1.05871, 0.898039}, {-0.775549, 0.701695, 0.341993}, {-0.153824, -0.194534, 0.658539}, {-0.770154, 0.396953, -0.174753}, {-0.272179, -0.00256086, 0.379733}, {0.0164933, -0.208395, -0.118309}, {0.367978, -1.10262, -0.593384}, {-0.393814, 0.444156, 0.32006}, {-0.746645, -0.143321, 0.110834}, {1.10583, -0.270163, 0.29216}, {0.323884, 0.394095, -0.20012}, {-0.0822365, 0.194892, -0.428848}, {0.697739, -0.344306, 0.858324}, {-0.225587, -0.103378, -0.245044}, {0.360696, -0.26966, 0.168714}, {1.15408, -0.427114, 0.758868}, {0.841335, 0.74872, -0.460789}, {-0.305278, 0.297479, 0.000553952}, {0.0858244, -0.0233768, -0.649656}, {-0.629839, 0.191636, 0.15537}, {-0.64659, 0.0430523, -0.269237}, {-0.556334, -0.734187, -0.190927}, {-0.0529303, 0.291137, 0.778311}, {-0.256959, 0.284493, -0.00820218}, {0.348896, 0.780546, 0.424523}, {-0.477929, 0.00588724, -0.208262}, {-0.29511, -0.437806, -0.394934}, {-0.556955, -0.0542462, -0.103999}, {0.364071, 1.30018, 0.779774}, {-0.443009, 0.115203, -0.212123}, {0.371761, 0.673562, 0.726522}, {0.0724725, -0.330718, 0.100865}, {0.0724425, 0.248406, 0.294284}, {0.412379, -0.316958, -0.919343}, {-0.468677, -0.348835, -0.330479}, {-0.46107, -0.432321, -1.14266}, {0.68924, 0.0211282, 0.41822}, {0.657634, -0.0164376, 0.823005}, {0.21876, 0.561058, 0.251152}, {-0.264448, -0.640774, -0.505837}, {0.29904, 0.352012, -0.373501}, {0.168615, 0.4237, 0.60847}, {0.475008, -0.258147, -0.034312}, {0.0577533, 0.0420978, 0.816788}, {0.602452, 0.0382665, -1.08584}, {-0.541153, -0.619156, 0.113941}, {0.526832, 0.0275629, 0.378952}, {0.960437, 0.0569663, 0.567605}, {0.00820964, -0.361305, -0.731621}, {0.283726, 0.285138, -0.0428587}, {0.420184, 0.104429, -0.290671}, {-0.625314, 0.368011, -0.721121}, {0.105271, 0.843375, 0.169}, {0.0121642, 0.526578, 0.0877002}, {0.662576, 0.674877, 0.639051}, {0.535628, 0.670036, 0.387521}, {0.571268, 0.641368, 0.0801363}, {0.130642, -0.339048, 1.2124}, {0.578319, 1.20832, -0.531433}, {-0.189637, 0.879397, -0.175743}, {-0.095506, -0.202657, 0.939684}, {0.00828047, -0.118391, 0.420126}, {0.436414, -0.287378, 0.46259}, {0.0331435, -0.0553382, 0.462593}};
 
@@ -33,11 +32,11 @@ int main(int argc, char *argv[])
 {
     using namespace std;
     
-    int dim = 1;
+    int dim = 3;
     int dataCount = 500;
-    int rbfCount = 200;
+    int rbfCount = 500;
     int fireflyCount = 500;
-    int maxGeneration = 20000;
+    int maxGeneration = 7500;
     
     int offset = 1;
     int startDataCount = 0;
@@ -56,43 +55,43 @@ int main(int argc, char *argv[])
 	GetFlucPeriod(fp, tmp);
 //    std::cout << fp.size() << std::endl;
     
-//    double max = 0, min = 99999999;
-//	for (int i = startDataCount; i < dataCount + offset; i++) {
-//		if (max < fp[i]) max = fp[i];
-//		if (min > fp[i]) min = fp[i];
-//	}
-//	std::vector<double> ffp(fp.size());
-//	for (int i = startDataCount; i < dataCount + offset; i++) {
-//		ffp[i] = ((double)fp[i] - min) / (max - min);
-//	}
+    double max = 0, min = 99999999;
+	for (int i = startDataCount; i < dataCount + offset; i++) {
+		if (max < fp[i]) max = fp[i];
+		if (min > fp[i]) min = fp[i];
+	}
+	std::vector<double> ffp(fp.size());
+	for (int i = startDataCount; i < dataCount + offset; i++) {
+		ffp[i] = ((double)fp[i] - min) / (max - min);
+	}
     
     vector<vector<double> > input;
     vector<vector<double> > output;
     
-//    for (int i = 0; i < dataCount; i++) {
-//        vector<double> tmpVector(dim);
-////		for (int j = 0; j < dim; j++) tmpVector[j] = tmp[startDataCount + i + j * offset];
-//        for (int j = 0; j < dim; j++) tmpVector[j] = ffp[startDataCount + i + j * offset];
-//		input.push_back(tmpVector);
-//        
-////        for (int j = 0; j < dim; j++) tmpVector[j] = tmp[startDataCount + i + j * offset + 1];
-//		for (int j = 0; j < dim; j++) tmpVector[j] = ffp[startDataCount + i + j * offset + 1];
-//		output.push_back(tmpVector);
-//	}
-    
-//    //ロジスティック写像を使うとき
-    double x = 0.01;
-    vector<double> tmpVector(1);
-    tmpVector[0] = x;
-    input.push_back(tmpVector);
     for (int i = 0; i < dataCount; i++) {
-        x = LogisticMap(x);
-        tmpVector[0] = x;
-        if (i < dataCount - 1) {
-            input.push_back(tmpVector);
-        }
-        output.push_back(tmpVector);
-    }
+        vector<double> tmpVector(dim);
+//		for (int j = 0; j < dim; j++) tmpVector[j] = tmp[startDataCount + i + j * offset];
+        for (int j = 0; j < dim; j++) tmpVector[j] = ffp[startDataCount + i + j * offset];
+		input.push_back(tmpVector);
+        
+//        for (int j = 0; j < dim; j++) tmpVector[j] = tmp[startDataCount + i + j * offset + 1];
+		for (int j = 0; j < dim; j++) tmpVector[j] = ffp[startDataCount + i + j * offset + 1];
+		output.push_back(tmpVector);
+	}
+    
+////    //ロジスティック写像を使うとき
+//    double x = 0.01;
+//    vector<double> tmpVector(1);
+//    tmpVector[0] = x;
+//    input.push_back(tmpVector);
+//    for (int i = 0; i < dataCount; i++) {
+//        x = LogisticMap(x);
+//        tmpVector[0] = x;
+//        if (i < dataCount - 1) {
+//            input.push_back(tmpVector);
+//        }
+//        output.push_back(tmpVector);
+//    }
     
     
     //データからFireflyを作成
@@ -133,20 +132,20 @@ int main(int argc, char *argv[])
     
     ofstream ofs("temp.txt");
     
-//    vector<double> tmpInput(dim);
-//    tmpInput = input[0];
-//    for (int i = 0; i < 100; i++) {
-//        ofs << i << " " << output[i+1][0] << " ";
-//        tmpInput = fireflyRBF.output(tmpInput);
-//        ofs << tmpInput[0];
-//        ofs << endl;
-//    };
+    vector<double> tmpInput(dim);
+    tmpInput = input[0];
+    for (int i = 0; i < 100; i++) {
+        ofs << i << " " << output[i+1][0] << " ";
+        tmpInput = fireflyRBF.output(tmpInput);
+        ofs << tmpInput[0];
+        ofs << endl;
+    };
     
-//    //ロジスティック写像を使うとき
-    for (double x = 0; x < 1.0; x += 0.01) {
-        tmpVector[0] = x;
-        ofs << x << " " << LogisticMap(x) << " " << fireflyRBF.output(tmpVector)[0] << std::endl;
-    }
+////    //ロジスティック写像を使うとき
+//    for (double x = 0; x < 1.0; x += 0.01) {
+//        tmpVector[0] = x;
+//        ofs << x << " " << LogisticMap(x) << " " << fireflyRBF.output(tmpVector)[0] << std::endl;
+//    }
     
     ofs.close();
     

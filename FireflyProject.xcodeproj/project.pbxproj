@@ -44,7 +44,6 @@
 		71BFAD011857926900037F0C /* Wave.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Wave.h; sourceTree = "<group>"; };
 		71BFAD031857941600037F0C /* analysis.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = analysis.cpp; sourceTree = "<group>"; };
 		71BFAD041857941600037F0C /* analysis.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = analysis.h; sourceTree = "<group>"; };
-		71C23B451881B6CE004758CA /* KKMatrix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = KKMatrix.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -91,7 +90,6 @@
 				71BFAD001857926900037F0C /* Wave.cpp */,
 				71BFAD041857941600037F0C /* analysis.h */,
 				71BFAD031857941600037F0C /* analysis.cpp */,
-				71C23B451881B6CE004758CA /* KKMatrix.h */,
 			);
 			path = FireflyProject;
 			sourceTree = "<group>";
