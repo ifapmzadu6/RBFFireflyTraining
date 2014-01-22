@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     int dim = 2;
     int dataCount = 500;
     int rbfCount = 500;
-    int fireflyCount = 500;
+    int fireflyCount = 400;
     int maxGeneration = 5000;
     
     int offset = 1;
@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
     vector<double> tmp;
 	vector<int> fp;
 	Wave wav;
-	if(wav.InputWave("sample.wav") != 0)
+	if(wav.InputWave("/Users/KeisukeKarijuku/Library/Developer/Xcode/DerivedData/FireflyProject-atoglxsngafbinaeredqypibrnpk/Build/Products/Release/sample.wav") != 0)
 		return -1;
 	wav.StereoToMono();
 	wav.GetData(tmp);

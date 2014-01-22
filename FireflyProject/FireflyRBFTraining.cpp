@@ -9,9 +9,10 @@
 #include "FireflyRBFTraining.h"
 
 #include <iostream>
-//#include <functional>
-#include <sys/time.h>
-#include "Firefly.h"
+#include <chrono>
+
+#include <thread>
+#include <future>
 
 
 FireflyRBFTraining::FireflyRBFTraining(int dim, int dataCount, int rbfCount, int fireflyCount, double attractiveness, double gumma, int maxGeneration)
@@ -23,6 +24,9 @@ FireflyRBFTraining::FireflyRBFTraining(int dim, int dataCount, int rbfCount, int
     this->mt = std::mt19937(random());
     this->score = std::uniform_real_distribution<double>(0.0, 1.0);
     this->nscore = std::normal_distribution<double>(0.0, 1.0);
+    
+//    this->num_thread = std::thread::hardware_concurrency();
+    this->num_thread = 2;
 }
 
 void FireflyRBFTraining::makeFireflyWithRandom() {
@@ -53,7 +57,7 @@ void FireflyRBFTraining::makeFireflyWithRandom() {
         for (auto &value : biases) {
             value = score(mt);
         }
-        Firefly newFirefly = Firefly(dim, dataCount, rbfCount, weights, spreads, centerVector, biases);
+        Firefly newFirefly = Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases);
         fireflies.push_back(newFirefly);
     }
 }
@@ -89,7 +93,7 @@ void FireflyRBFTraining::makeFireflyWithInput(std::vector<std::vector<double>> &
         for (auto &value : biases) {
             value = score(mt);
         }
-        Firefly newFirefly = Firefly(dim, dataCount, rbfCount, weights, spreads, centerVector, biases);
+        Firefly newFirefly = Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases);
         fireflies.push_back(newFirefly);
     }
 }
@@ -97,7 +101,7 @@ void FireflyRBFTraining::makeFireflyWithInput(std::vector<std::vector<double>> &
 void FireflyRBFTraining::makeFireflyWithData(std::vector<std::vector<double>> &weights, std::vector<std::vector<double>> &centerVector, std::vector<double> &spreads, std::vector<double> &biases) {
     fireflies = std::vector<Firefly>();
     
-    Firefly newFirefly = Firefly(dim, dataCount, rbfCount, weights, spreads, centerVector, biases);
+    Firefly newFirefly = Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases);
     fireflies.push_back(newFirefly);
 }
 
@@ -110,43 +114,69 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
     for (auto &firefly : fireflies) {
         firefly.calcFitness(inputs, outputs);
     }
-    std::sort(fireflies.begin(), fireflies.end(), compare);
+    std::sort(fireflies.begin(), fireflies.end(), Firefly::compare);
     
     int iter = 0;
     double delta = 1.0 - pow((pow(10.0, -4.0) / 0.9), 1.0 / (double)maxGeneration);
     std::vector<Firefly> tmpFireflies(fireflyCount);
+    
+    auto moveFireflyAsync = [&](int const &begin_index, int const &end_index) {
+        auto iter = fireflies.begin();
+        iter += begin_index;
+        auto endIter = fireflies.begin();
+        endIter += end_index;
+        while (iter != endIter) {
+            for (auto &tmpFirefly : tmpFireflies) {
+                if ((*iter).fitness < tmpFirefly.fitness) {
+                    (*iter).moveToFirefly(tmpFirefly, alpha, mt, score);
+                }
+            }
+            (*iter).findLimits();
+            (*iter).calcFitness(inputs, outputs);
+            ++iter;
+        }
+    };
+    
     while (iter < maxGeneration) {
-        struct timeval s, t;
-        gettimeofday(&s, NULL);
+        auto begin_time = std::chrono::high_resolution_clock::now();
         
         alpha = (1.0 - delta) * alpha;
         
         std::copy(fireflies.begin(), fireflies.end(), tmpFireflies.begin());
-        for (auto &firefly : fireflies) {
-            for (auto &tmpFirefly : tmpFireflies) {
-                if (firefly.fitness < tmpFirefly.fitness) {
-                    moveFirefly(firefly, tmpFirefly);
-                }
-            }
+        
+        std::vector<std::future<void>> task(num_thread);
+        int num_block = fireflyCount / num_thread;
+        int from = 0;
+        int to = 0;
+        for (int i = 0; i < num_thread; i++) {
+            to = (i == num_thread - 1) ? fireflyCount - 1 : from + num_block - 1;
+            task[i] = std::async(moveFireflyAsync, from, to);
+            from = to + 1;
         }
-        for (auto &firefly : fireflies) {
-            findLimits(firefly);
+        for (auto &f : task) {
+            f.get();
         }
         
-        for (auto &firefly : fireflies) {
-            firefly.calcFitness(inputs, outputs);
-        }
-        std::sort(fireflies.begin(), fireflies.end(), compare);
+//        for (auto &firefly : fireflies) {
+//            for (auto &tmpFirefly : tmpFireflies) {
+//                if (firefly.fitness < tmpFirefly.fitness) {
+//                    firefly.moveToFirefly(tmpFirefly, alpha, mt, score);
+//                }
+//            }
+//            firefly.findLimits();
+//            firefly.calcFitness(inputs, outputs);
+//        }
+        std::sort(fireflies.begin(), fireflies.end(), Firefly::compare);
         
         Firefly &bestFirefly = fireflies[0];
-        randomlyWalk(bestFirefly);
-        findLimits(bestFirefly);
+        bestFirefly.randomlyWalk(alpha, mt, nscore);
+        bestFirefly.findLimits();    void randomlyWalk(double alpha, std::mt19937 &mt, std::uniform_real_distribution<double> &score);
         bestFirefly.calcFitness(inputs, outputs);
-        std::sort(fireflies.begin(), fireflies.end(), compare);
+        std::sort(fireflies.begin(), fireflies.end(), Firefly::compare);
         
-        gettimeofday(&t, NULL);
+        auto end_time = std::chrono::high_resolution_clock::now();
         std::cout << "iter = " << iter << ", bestfitness = " << fireflies[0].fitness
-        << "  [" << (t.tv_sec - s.tv_sec) * 1000 + (t.tv_usec - s.tv_usec) / 1000 << "ms]"
+        << "  [" << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time).count() << "ms]"
         << std::endl;
         
         ++iter;
@@ -218,170 +248,3 @@ void FireflyRBFTraining::outputBestFirefly(std::ofstream &ofstream) {
     }
     ofstream << "};" << std::endl;
 }
-
-const double FireflyRBFTraining::distanceBetweenTwoFireflies(const Firefly &firefly1, const Firefly &firefly2) {
-    double radius = 0.0;
-    
-    auto di_w1IIter = firefly1.weights.begin();
-    auto di_w1IIterEnd = firefly1.weights.end();
-    auto di_w2IIter = firefly2.weights.begin();
-    while (di_w1IIter != di_w1IIterEnd) {
-        auto di_w1JIter = (*di_w1IIter).begin();
-        auto di_w1JIterEnd = (*di_w1IIter).end();
-        auto di_w2JIter = (*di_w2IIter).begin();
-        while (di_w1JIter != di_w1JIterEnd) {
-            radius = ((*di_w1JIter) - (*di_w2JIter)) * ((*di_w1JIter) - (*di_w2JIter));
-            ++di_w1JIter;
-            ++di_w2JIter;
-        }
-        ++di_w1IIter;
-        ++di_w2IIter;
-    }
-    
-    auto di_c1IIter = firefly1.centerVectors.begin();
-    auto di_c1IIterEnd = firefly1.centerVectors.end();
-    auto di_c2IIter = firefly2.centerVectors.begin();
-    while (di_c1IIter != di_c1IIterEnd) {
-        auto di_c1JIter = (*di_c1IIter).begin();
-        auto di_c1JIterEnd = (*di_c1IIter).end();
-        auto di_c2JIter = (*di_c2IIter).begin();
-        while (di_c1JIter != di_c1JIterEnd) {
-            radius = ((*di_c1JIter) - (*di_c2JIter)) * ((*di_c1JIter) - (*di_c2JIter));
-            ++di_c1JIter;
-            ++di_c2JIter;
-        }
-        ++di_c1IIter;
-        ++di_c2IIter;
-    }
-    
-    auto di_s1Iter = firefly1.spreads.begin();
-    auto di_s1IterEnd = firefly1.spreads.end();
-    auto di_s2Iter = firefly2.spreads.begin();
-    while (di_s1Iter != di_s1IterEnd) {
-        radius += ((*di_s1Iter) - (*di_s2Iter)) * ((*di_s1Iter) - (*di_s2Iter));
-        ++di_s1Iter;
-        ++di_s2Iter;
-    }
-    
-    auto di_b1Iter = firefly1.biases.begin();
-    auto di_b1IterEnd = firefly1.biases.end();
-    auto di_b2Iter = firefly2.biases.begin();
-    while (di_b1Iter != di_b1IterEnd) {
-        radius += ((*di_b1Iter) - (*di_b2Iter)) * ((*di_b1Iter) - (*di_b2Iter));
-        ++di_b1Iter;
-        ++di_b2Iter;
-    }
-    
-    return sqrt(radius);
-}
-
-void FireflyRBFTraining::moveFirefly(Firefly &firefly, const Firefly &destinationFirefly) {
-    double rij = distanceBetweenTwoFireflies(firefly, destinationFirefly);
-    double beta = (attractiveness - attractivenessMin) * exp(-gumma * pow(rij, 2.0)) + attractivenessMin;
-    
-    auto mo_wIIter = firefly.weights.begin();
-    auto mo_wIIterEnd = firefly.weights.end();
-    auto mo_wDIIter = destinationFirefly.weights.begin();
-    while (mo_wIIter != mo_wIIterEnd) {
-        auto mo_wJIter = (*mo_wIIter).begin();
-        auto mo_wJIterEnd = (*mo_wIIter).end();
-        auto mo_wDJIter = (*mo_wDIIter).begin();
-        while (mo_wJIter != mo_wJIterEnd) {
-            (*mo_wJIter) = (1.0 - beta) * (*mo_wJIter) + beta * (*mo_wDJIter) + alpha * (score(mt) - 0.5) * 2.0;
-            if (*mo_wJIter < -1.0) *mo_wJIter = -1.0;
-            else if (*mo_wJIter > 1.0) *mo_wJIter = 1.0;
-            ++mo_wJIter;
-            ++mo_wDJIter;
-        }
-        ++mo_wIIter;
-        ++mo_wDIIter;
-    }
-    
-    auto mo_cIIter = firefly.centerVectors.begin();
-    auto mo_cIIterEnd = firefly.centerVectors.end();
-    auto mo_cDIIter = destinationFirefly.centerVectors.begin();
-    while (mo_cIIter != mo_cIIterEnd) {
-        auto mo_cJIter = (*mo_cIIter).begin();
-        auto mo_cJIterEnd = (*mo_cIIter).end();
-        auto mo_cDJIter = (*mo_cDIIter).begin();
-        while (mo_cJIter != mo_cJIterEnd) {
-            (*mo_cJIter) = (1.0 - beta) * (*mo_cJIter) + beta * (*mo_cDJIter) + alpha * (score(mt) - 0.5) * 2.0;
-            if (*mo_cJIter < -1.0) *mo_cJIter = -1.0;
-            else if (*mo_cJIter > 1.0) *mo_cJIter = 1.0;
-            ++mo_cJIter;
-            ++mo_cDJIter;
-        }
-        ++mo_cIIter;
-        ++mo_cDIIter;
-    }
-    
-    auto mo_sIter = firefly.spreads.begin();
-    auto mo_sIterEnd = firefly.spreads.end();
-    auto mo_sDIter = destinationFirefly.spreads.begin();
-    while (mo_sIter != mo_sIterEnd) {
-        (*mo_sIter) = (1.0 - beta) * (*mo_sIter) + beta * (*mo_sDIter) + alpha * (score(mt) - 0.5) * 2.0;
-        if (*mo_sIter < -1.0) *mo_sIter = -1.0;
-        else if (*mo_sIter > 1.0) *mo_sIter = 1.0;
-        ++mo_sIter;
-        ++mo_sDIter;
-    }
-    
-    auto mo_bIter = firefly.biases.begin();
-    auto mo_bIterEnd = firefly.biases.end();
-    auto mo_bDIter = destinationFirefly.biases.begin();
-    while (mo_bIter != mo_bIterEnd) {
-        *mo_bIter = (1.0 - beta) * *mo_bIter + beta * *mo_bDIter + alpha * (score(mt) - 0.5) * 2.0;
-        if (*mo_bIter < -1.0) *mo_bIter = -1.0;
-        else if (*mo_bIter > 1.0) *mo_bIter = 1.0;
-        ++mo_bIter;
-        ++mo_bDIter;
-    }
-}
-
-//上限、下限に値をおさめる
-void FireflyRBFTraining::findLimits(Firefly &firefly) {
-    for (auto &tmp : firefly.weights) {
-        for (auto &value : tmp) {
-            if (value < -1.0) value = -1.0;
-            else if (value > 1.0) value = 1.0;
-        }
-    }
-    for (auto &tmp : firefly.centerVectors) {
-        for (auto &value : tmp) {
-            if (value < -1.0) value = -1.0;
-            else if (value > 1.0) value = 1.0;
-        }
-    }
-    for (auto &value : firefly.spreads) {
-        if (value < -1.0) value = -1.0;
-        else if (value > 1.0) value = 1.0;
-    }
-    for (auto &value : firefly.biases) {
-        if (value < -1.0) value = -1.0;
-        else if (value > 1.0) value = 1.0;
-    }
-}
-
-void FireflyRBFTraining::randomlyWalk(Firefly &firefly) {
-    for (auto &tmp : firefly.weights) {
-        for (auto &value : tmp) {
-            value += alpha * (nscore(mt) - 0.5) * 2.0;
-        }
-    }
-    for (auto &tmp : firefly.centerVectors) {
-        for (auto &value : tmp) {
-            value += alpha * (nscore(mt) - 0.5) * 2.0;
-        }
-    }
-    for (auto &value : firefly.spreads) {
-        value += alpha * (nscore(mt) - 0.5) * 2.0;
-    }
-    for (auto &value : firefly.biases) {
-        value += alpha * (nscore(mt) - 0.5) * 2.0;
-    }
-}
-
-bool FireflyRBFTraining::compare(const Firefly &obj1, const Firefly &obj2) {
-    return obj1.fitness < obj2.fitness;
-};
-

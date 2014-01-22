@@ -13,8 +13,7 @@
 #include <random>
 #include <fstream>
 
-
-class Firefly;
+#include "Firefly.h"
 
 class FireflyRBFTraining
 {
@@ -31,8 +30,7 @@ private:
     int rbfCount;
     //firefly
 	int fireflyCount;
-//    std::vector<Firefly> fireflies;
-    std::vector<std::shared_ptr<Firefly>> firefliesPtr;
+    std::vector<Firefly> fireflies;
     //fireflyが移動する時の移動係数
     double attractiveness;
     double attractivenessMin;
@@ -58,6 +56,8 @@ public:
     //データからFireflyをひとつ生成する
     void makeFireflyWithData(std::vector<std::vector<double>> &weights, std::vector<std::vector<double>> &centerVector, std::vector<double> &spreads, std::vector<double> &biases);
     
+    static double gen_rand_score();
+    
     //教師信号入力input、教師信号出力output
     void training(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &outputs);
     
@@ -66,16 +66,8 @@ public:
     //一番いい結果のFireflyを出力
     void outputBestFirefly(std::ofstream &output);
     
-private:
-    //各要素の距離
-    inline const double distanceBetweenTwoFireflies(const Firefly &firefly1, const Firefly &firefly2);
-    //移動  firefly <- (1-beta)*firefly + beta*firefly + (rand-1/2)
-    inline void moveFirefly(Firefly &firefly, const Firefly &destinationFirefly);
-    //-1から1の間におさめる
-    inline void findLimits(Firefly &firefly);
-    //ランダムに移動  t <- t + sigma*(rand-1/2)*L　（乱数は正規分布を与える。）
-    inline void randomlyWalk(Firefly &firefly);
-    static bool compare(const Firefly &obj1, const Firefly &obj2);
+    //マルチスレッド関係
+    std::size_t num_thread;    
 };
 
 #endif
