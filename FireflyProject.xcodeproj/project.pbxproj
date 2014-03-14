@@ -44,6 +44,7 @@
 		71BFAD011857926900037F0C /* Wave.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Wave.h; sourceTree = "<group>"; };
 		71BFAD031857941600037F0C /* analysis.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = analysis.cpp; sourceTree = "<group>"; };
 		71BFAD041857941600037F0C /* analysis.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = analysis.h; sourceTree = "<group>"; };
+		71E9B70518A20279003B6D90 /* File.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = File.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				7191BDA71815090000CE43E0 /* main.cpp */,
+				71E9B70518A20279003B6D90 /* File.h */,
 				71B988011883B5D700A67FCD /* Firefly.h */,
 				71B988021883B8CC00A67FCD /* Firefly.cpp */,
 				719A40C21817A263009D7EEE /* FireflyRBFTraining.h */,
@@ -231,11 +233,13 @@
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_CXX_LANGUAGE_STANDARD = "c++0x";
+				COPY_PHASE_STRIP = YES;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"/Users/KeisukeKarijuku/Documents/Xcode\\ Projects/FireflyProject",
 				);
 				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_OPTIMIZATION_LEVEL = fast;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -250,6 +254,7 @@
 					"/Users/KeisukeKarijuku/Documents/Xcode\\ Projects/FireflyProject",
 				);
 				GCC_C_LANGUAGE_STANDARD = c11;
+				GCC_OPTIMIZATION_LEVEL = fast;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;

@@ -20,8 +20,6 @@ class FireflyRBFTraining
 private:
     //最大試行回数
     int maxGeneration;
-    //最大誤差
-    double eps;
     //教師信号input,outputの次元
     int dim;
     //教師信号input,outputのデータ数
@@ -30,7 +28,7 @@ private:
     int rbfCount;
     //firefly
 	int fireflyCount;
-    std::vector<Firefly> fireflies;
+    std::vector<std::shared_ptr<Firefly>> firefliesPtr;
     //fireflyが移動する時の移動係数
     double attractiveness;
     double attractivenessMin;
@@ -38,12 +36,8 @@ private:
     double gumma;
     //乱数の影響力を決める
     double alpha;
-    //NS-FAのfireflyの関係図のフラグ(fireflyCount, fireflyCount),Network-Structured Firefly Algorithmで使用
-    std::vector<std::vector<bool>> connection;
-    //乱数生成
-    std::mt19937 mt;
-    std::uniform_real_distribution<double> score;
-    std::normal_distribution<double> nscore;
+//    //NS-FAのfireflyの関係図のフラグ(fireflyCount, fireflyCount),Network-Structured Firefly Algorithmで使用
+//    std::vector<std::vector<bool>> connection;
     
 public:
     //コンストラクタ
@@ -52,11 +46,9 @@ public:
     //Fireflyの初期化
     void makeFireflyWithRandom();
     //inputのセンターベクトルからfireflyのセンターベクトルを生成する
-    void makeFireflyWithInput(std::vector<std::vector<double>> &inputs);
+    void makeFireflyWithInput(const std::vector<std::vector<double>> &inputs);
     //データからFireflyをひとつ生成する
-    void makeFireflyWithData(std::vector<std::vector<double>> &weights, std::vector<std::vector<double>> &centerVector, std::vector<double> &spreads, std::vector<double> &biases);
-    
-    static double gen_rand_score();
+    void makeFireflyWithData(const std::vector<std::vector<double>> &weights,const std::vector<std::vector<double>> &centerVector, const std::vector<double> &spreads, const std::vector<double> &biases);
     
     //教師信号入力input、教師信号出力output
     void training(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &outputs);

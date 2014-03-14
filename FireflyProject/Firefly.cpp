@@ -9,9 +9,9 @@
 #include "Firefly.h"
 
 #include <cmath>
-
 #include <iostream>
 
+//#define BIAS_DISABLE
 
 Firefly::Firefly () {
 }
@@ -24,7 +24,7 @@ Firefly::Firefly(const Firefly &obj)
 : dim(obj.dim), dataCount(obj.dataCount), rbfCount(obj.rbfCount), fitness(obj.fitness), attractiveness(obj.attractiveness), attractivenessMin(obj.attractivenessMin), gumma(obj.gumma), weights(obj.weights), spreads(obj.spreads), centerVectors(obj.centerVectors), biases(obj.biases) {
 }
 
-void Firefly::calcFitness(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &outputs) {
+void Firefly::calcFitness(const std::vector<std::vector<double>> &inputs, const std::vector<std::vector<double>> &outputs, std::mt19937 &mt, std::uniform_real_distribution<double> &score) {
     std::vector<std::vector<double>> tmpRbfOutput(dataCount, std::vector<double>(rbfCount, 0.0));
     auto cr_rIIter = tmpRbfOutput.begin();
     auto cr_rIIterEnd = tmpRbfOutput.end();
@@ -44,9 +44,34 @@ void Firefly::calcFitness(const std::vector<std::vector<double>> &inputs, const 
         ++cr_iIter;
     }
     
+//    std::vector<std::vector<double>> tmpWeights = weights;
+//    
+//    for (auto &vec : tmpWeights) {
+//        for (auto &value : vec) {
+//            if (score(mt) < 0.05) {
+//                value = 0.0;
+//            }
+//        }
+//    }
+    
+    double seisokuka = 0.0;
+    for (auto &vec : weights) {
+        for (auto &value : vec) {
+            seisokuka += (value * value);
+        }
+    }
+    
+    for (double &value : spreads) {
+        seisokuka += (value * value);
+    }
+    
+    seisokuka /= (rbfCount * dim + rbfCount);
+    
     std::vector<std::vector<double>> tmpOutput(dataCount, std::vector<double>(dim, 0.0));
     mult(tmpOutput, tmpRbfOutput, weights);
+//    mult(tmpOutput, tmpRbfOutput, tmpWeights);
     
+#ifndef BIAS_DISABLE
     auto cf_oIIter = tmpOutput.begin();
     auto cf_oIIterEnd = tmpOutput.end();
     while (cf_oIIter != cf_oIIterEnd) {
@@ -60,14 +85,42 @@ void Firefly::calcFitness(const std::vector<std::vector<double>> &inputs, const 
         }
         ++cf_oIIter;
     }
+#endif
     
-    fitness = 1.0 / (1.0 + mse(tmpOutput, outputs));
+    fitness = 1.0 / (1.0 + mse(tmpOutput, outputs) + seisokuka * 0.00001);
+    
+//    std::vector<double> tmpVector = inputs[0];
+//    auto oIter = tmpOutput.begin();
+//    auto oIterEnd = tmpOutput.end();
+//    while (oIter != oIterEnd) {
+//        (*oIter) = output(tmpVector);
+//        
+//        auto vIter = tmpVector.begin();
+//        auto vIterEnd = tmpVector.end();
+//        while (vIter != (vIterEnd - 1)) {
+//            (*vIter) = *(vIter + 1);
+//            ++vIter;
+//        }
+//        (*vIter) = (*oIter)[dim - 1];
+//        if (isnan(*vIter)) {
+//            fitness = 0.0;
+//            return;
+//        }
+//        ++oIter;
+//    }
+    
+//    for (int i = 0; i < dataCount; i++) {
+//        tmpVector = output(tmpVector);
+//        std::copy(tmpVector.begin(), tmpVector.end(), tmpOutput[i].begin());
+//    }
+    
+//    fitness += (1.0 / (1.0 + mse(tmpOutput, outputs))) / 20.0;
 }
 
 std::vector<double> Firefly::output(const std::vector<double> &input) const {
-    std::vector<double> tmpVector(rbfCount, 0.0);
-    auto tIter = tmpVector.begin();
-    auto tIterEnd = tmpVector.end();
+    std::vector<double> tmpRBFOutput(rbfCount, 0.0);
+    auto tIter = tmpRBFOutput.begin();
+    auto tIterEnd = tmpRBFOutput.end();
     auto cIter = centerVectors.begin();
     auto sIter = spreads.begin();
     while (tIter != tIterEnd) {
@@ -77,16 +130,13 @@ std::vector<double> Firefly::output(const std::vector<double> &input) const {
         ++sIter;
     }
     
-    std::vector<double> tmpVector1(dim, 0.0);
-    for (auto &value : tmpVector1) {
-        value = 0.0;
-    }
-    auto tVIter = tmpVector.begin();
-    auto tVIterEnd = tmpVector.end();
+    std::vector<double> output(dim, 0.0);
+    auto tVIter = tmpRBFOutput.begin();
+    auto tVIterEnd = tmpRBFOutput.end();
     auto wIIter = weights.begin();
     while (tVIter != tVIterEnd) {
-        auto oIter = tmpVector1.begin();
-        auto oIterEnd = tmpVector1.end();
+        auto oIter = output.begin();
+        auto oIterEnd = output.end();
         auto wJIter = (*wIIter).begin();
         while (oIter != oIterEnd) {
             (*oIter) += (*wJIter) * (*tVIter);
@@ -97,16 +147,18 @@ std::vector<double> Firefly::output(const std::vector<double> &input) const {
         ++tVIter;
     }
     
-    auto ttIter = tmpVector1.begin();
-    auto ttIterEnd = tmpVector1.end();
+#ifndef BIAS_DISABLE
+    auto ttIter = output.begin();
+    auto ttIterEnd = output.end();
     auto bIter = biases.begin();
     while (ttIter != ttIterEnd) {
         (*ttIter) += (*bIter);
         ++ttIter;
         ++bIter;
     }
+#endif
     
-    return tmpVector1;
+    return output;
 }
 
 const double Firefly::function(const double &spreads, const std::vector<double> &centerVector, const std::vector<double> &x) const {
@@ -222,6 +274,7 @@ const double Firefly::normToFirefly(const Firefly &firefly) const {
         ++di_s2Iter;
     }
     
+#ifndef BIAS_DISABLE
     auto di_b1Iter = biases.begin();
     auto di_b1IterEnd = biases.end();
     auto di_b2Iter = firefly.biases.begin();
@@ -230,15 +283,15 @@ const double Firefly::normToFirefly(const Firefly &firefly) const {
         ++di_b1Iter;
         ++di_b2Iter;
     }
+#endif
     
     return sqrt(radius);
 }
 
-//template <typename Ta>
-//void Firefly::moveToFirefly(const Firefly &firefly, double alpha, const Ta rand) {
-void Firefly::moveToFirefly(const Firefly &firefly, double alpha, std::mt19937 &mt, std::uniform_real_distribution<double> &score) {
+void Firefly::moveToFirefly(const Firefly &firefly, double &alpha, std::mt19937 &mt, std::uniform_real_distribution<double> &score) {
     double rij = normToFirefly(firefly);
     double beta = (attractiveness - attractivenessMin) * exp(-gumma * pow(rij, 2.0)) + attractivenessMin;
+    double cbeta = 1.0 - beta;
     
     auto mo_wIIter = weights.begin();
     auto mo_wIIterEnd = weights.end();
@@ -248,9 +301,7 @@ void Firefly::moveToFirefly(const Firefly &firefly, double alpha, std::mt19937 &
         auto mo_wJIterEnd = (*mo_wIIter).end();
         auto mo_wDJIter = (*mo_wDIIter).begin();
         while (mo_wJIter != mo_wJIterEnd) {
-            (*mo_wJIter) = (1.0 - beta) * (*mo_wJIter) + beta * (*mo_wDJIter) + alpha * (score(mt) - 0.5) * 2.0;
-            if (*mo_wJIter < -1.0) *mo_wJIter = -1.0;
-            else if (*mo_wJIter > 1.0) *mo_wJIter = 1.0;
+            (*mo_wJIter) = cbeta * (*mo_wJIter) + beta * (*mo_wDJIter) + alpha * score(mt);
             ++mo_wJIter;
             ++mo_wDJIter;
         }
@@ -266,9 +317,7 @@ void Firefly::moveToFirefly(const Firefly &firefly, double alpha, std::mt19937 &
         auto mo_cJIterEnd = (*mo_cIIter).end();
         auto mo_cDJIter = (*mo_cDIIter).begin();
         while (mo_cJIter != mo_cJIterEnd) {
-            (*mo_cJIter) = (1.0 - beta) * (*mo_cJIter) + beta * (*mo_cDJIter) + alpha * (score(mt) - 0.5) * 2.0;
-            if (*mo_cJIter < -1.0) *mo_cJIter = -1.0;
-            else if (*mo_cJIter > 1.0) *mo_cJIter = 1.0;
+            (*mo_cJIter) = cbeta * (*mo_cJIter) + beta * (*mo_cDJIter) + alpha * score(mt);
             ++mo_cJIter;
             ++mo_cDJIter;
         }
@@ -280,70 +329,71 @@ void Firefly::moveToFirefly(const Firefly &firefly, double alpha, std::mt19937 &
     auto mo_sIterEnd = spreads.end();
     auto mo_sDIter = firefly.spreads.begin();
     while (mo_sIter != mo_sIterEnd) {
-        (*mo_sIter) = (1.0 - beta) * (*mo_sIter) + beta * (*mo_sDIter) + alpha * (score(mt) - 0.5) * 2.0;
-        if (*mo_sIter < -1.0) *mo_sIter = -1.0;
-        else if (*mo_sIter > 1.0) *mo_sIter = 1.0;
+        (*mo_sIter) = cbeta * (*mo_sIter) + beta * (*mo_sDIter) + alpha * score(mt);
+//        (*mo_sIter) = cbeta * (*mo_sIter) + beta * (*mo_sDIter) + alpha * score(mt) / 100.0;
         ++mo_sIter;
         ++mo_sDIter;
     }
     
+#ifndef BIAS_DISABLE
     auto mo_bIter = biases.begin();
     auto mo_bIterEnd = biases.end();
     auto mo_bDIter = firefly.biases.begin();
     while (mo_bIter != mo_bIterEnd) {
-        *mo_bIter = (1.0 - beta) * *mo_bIter + beta * *mo_bDIter + alpha * (score(mt) - 0.5) * 2.0;
-        if (*mo_bIter < -1.0) *mo_bIter = -1.0;
-        else if (*mo_bIter > 1.0) *mo_bIter = 1.0;
+        (*mo_bIter) = cbeta * (*mo_bIter) + beta * (*mo_bDIter) + alpha * score(mt);
         ++mo_bIter;
         ++mo_bDIter;
     }
+#endif
 }
 
-//template <typename Tb>
-//void Firefly::randomlyWalk(double alpha, const Tb rand) {
-void Firefly::randomlyWalk(double alpha, std::mt19937 &mt, std::normal_distribution<double> &score) {
-    for (auto &tmp : weights) {
-        for (auto &value : tmp) {
-            value += alpha * (score(mt) - 0.5) * 2.0;
-        }
-    }
-    for (auto &tmp : centerVectors) {
-        for (auto &value : tmp) {
-            value += alpha * (score(mt) - 0.5) * 2.0;
-        }
-    }
-    for (auto &value : spreads) {
-        value += alpha * (score(mt) - 0.5) * 2.0;
-    }
-    for (auto &value : biases) {
-        value += alpha * (score(mt) - 0.5) * 2.0;
-    }
+void Firefly::randomlyWalk(double &alpha, std::mt19937 &mt, std::uniform_real_distribution<double> &score) {
+    for (auto &tmp : weights) for (auto &value : tmp) value += alpha * score(mt);
+    for (auto &tmp : centerVectors) for (auto &value : tmp) value += alpha * score(mt);
+    for (auto &value : spreads) value += alpha * score(mt);
+#ifndef BIAS_DISABLE
+    for (auto &value : biases) value += alpha * score(mt);
+#endif
 }
 
 void Firefly::findLimits() {
+    double ud = 1.0;
+    double ld = -1.0;
+    double zero = 0.0f;
+    
     for (auto &tmp : weights) {
         for (auto &value : tmp) {
-            if (value < -1.0) value = -1.0;
-            else if (value > 1.0) value = 1.0;
+            if (value > ud) value = ud;
+            else if (value < ld) value = ld;
         }
     }
     for (auto &tmp : centerVectors) {
         for (auto &value : tmp) {
-            if (value < -1.0) value = -1.0;
-            else if (value > 1.0) value = 1.0;
+            if (value > ud) value = ud;
+            else if (value < ld) value = ld;
         }
     }
     for (auto &value : spreads) {
-        if (value < -1.0) value = -1.0;
-        else if (value > 1.0) value = 1.0;
+        if (value > ld) value = ld;
+        else if (value < zero) value = zero;
     }
+    
+#ifndef BIAS_DISABLE
     for (auto &value : biases) {
-        if (value < -1.0) value = -1.0;
-        else if (value > 1.0) value = 1.0;
+        if (value > ud) value = ud;
+        else if (value < ld) value = ld;
     }
+#endif
+    
+//    double sud = -0.01;
+//    double sld = 0.01;
+//    for (auto &value : spreads) {
+//        if (value > sld) value = sld;
+//        else if (value < sud) value = sud;
+//    }
+//    for (auto &value : biases) {
+//        if (value > ud) value = ud;
+//        else if (value < ld) value = ld;
+//    }
+    
 }
-
-bool Firefly::compare(const Firefly &obj1, const Firefly &obj2) {
-    return obj1.fitness < obj2.fitness;
-};
-
