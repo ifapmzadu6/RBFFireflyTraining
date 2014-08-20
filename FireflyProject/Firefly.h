@@ -31,8 +31,6 @@ public:
     
     //RBFの重み(rbfCount, dim)
     std::vector<std::vector<double>> weights;
-    //RBFの係数（上に凸か下に凸か決める）
-    std::vector<double> alphas;
     //RBFのシグマ(rbfCount)
     std::vector<double> spreads;
     //RBFのセンターベクトル(rbfCount, dim)
@@ -57,12 +55,12 @@ public:
     void randomlyWalk(double &alpha, std::mt19937 &mt, std::uniform_real_distribution<double> &score);
     //上限、下限に値をおさめる
     void findLimits();
-        
+    
     //出力
     std::vector<double> output(const std::vector<double> &input) const;
     
 private:
-    const double function(const double &spreads, const std::vector<double> &centerVector, const std::vector<double> &x) const;
+    const double function(const double &spread, const std::vector<double> &centerVector, const std::vector<double> &x) const;
     const double mse(const std::vector<std::vector<double>> &d, const std::vector<std::vector<double>> &o) const;
     const double squeredNorm(const std::vector<double> &a, const std::vector<double> &b) const;
     void mult(std::vector<std::vector<double>> &Y, const std::vector<std::vector<double>> &A, const std::vector<std::vector<double>> &B) const;

@@ -42,6 +42,8 @@ void FireflyRBFTraining::makeFireflyWithRandom() {
         for (auto &value : spreads) value = score(mt);
         std::vector<double> biases(dim);
         for (auto &value : biases) value = mscore(mt);
+        std::vector<double> alphas(rbfCount);
+        for (auto &value : alphas) value = mscore(mt);
         
         auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
         firefliesPtr.push_back(newPtr);
@@ -70,9 +72,11 @@ void FireflyRBFTraining::makeFireflyWithInput(const std::vector<std::vector<doub
             centerVector.push_back(newVector);
         }
         std::vector<double> spreads(rbfCount);
-        for (auto &value : spreads) value = score(mt);
-        std::vector<double> biases(dim);
+        for (auto &value : spreads) value = score(mt) * 0.1;
+        std::vector<double> biases(rbfCount);
         for (auto &value : biases) value = score(mt);
+        std::vector<double> alphas(rbfCount);
+        for (auto &value : alphas) value = mscore(mt);
         
         auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
         firefliesPtr.push_back(newPtr);
@@ -114,7 +118,7 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
             auto ptr = (*iter).get();
             for (auto &tmpFireflyPtr : tmpFirefliesPtr) {
                 auto tmpPtr = tmpFireflyPtr.get();
-                if (ptr->fitness != tmpPtr->fitness) {
+                if (ptr->fitness < tmpPtr->fitness) {
                     ptr->moveToFirefly(*tmpPtr, alpha, asymt, asyscore);
                 }
                 else {
@@ -141,6 +145,8 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
         
         alpha = delta * alpha;
         
+        std::random_shuffle(firefliesPtr.begin(), firefliesPtr.end());
+        
         //Fireflyをコピーする。後でFireflyの移動に使う。
         auto it = firefliesPtr.begin();
         auto itE = firefliesPtr.end();
@@ -150,13 +156,11 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
             ++it; ++itT;
         }
         
-//        //最適なFireflyをランダムに移動させる
-//        Firefly *bestFirefly = firefliesPtr[0].get();
-//        bestFirefly->randomlyWalk(alpha, mt, score);
-//        bestFirefly->findLimits();
-//        bestFirefly->calcFitness(inputs, outputs, mt, eescore);
-        
-//        moveFireflyAsync(1, fireflyCount, firefliesPtr, tmpFirefliesPtr, alpha);
+        //最適なFireflyをランダムに移動させる
+        Firefly *bestFirefly = firefliesPtr[0].get();
+        bestFirefly->randomlyWalk(alpha, mt, score);
+        bestFirefly->findLimits();
+        bestFirefly->calcFitness(inputs, outputs, mt, eescore);
         
         int begin = 0;
         int count = fireflyCount;

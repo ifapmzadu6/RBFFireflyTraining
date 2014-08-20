@@ -54,18 +54,18 @@ void Firefly::calcFitness(const std::vector<std::vector<double>> &inputs, const 
 //        }
 //    }
     
-    double seisokuka = 0.0;
-    for (auto &vec : weights) {
-        for (auto &value : vec) {
-            seisokuka += (value * value);
-        }
-    }
-    
-    for (double &value : spreads) {
-        seisokuka += (value * value);
-    }
-    
-    seisokuka /= (rbfCount * dim + rbfCount);
+//    double seisokuka = 0.0;
+//    for (auto &vec : weights) {
+//        for (auto &value : vec) {
+//            seisokuka += (value * value);
+//        }
+//    }
+//    
+//    for (double &value : spreads) {
+//        seisokuka += (value * value);
+//    }
+//    
+//    seisokuka /= (rbfCount * dim + rbfCount);
     
     std::vector<std::vector<double>> tmpOutput(dataCount, std::vector<double>(dim, 0.0));
     mult(tmpOutput, tmpRbfOutput, weights);
@@ -87,7 +87,7 @@ void Firefly::calcFitness(const std::vector<std::vector<double>> &inputs, const 
     }
 #endif
     
-    fitness = 1.0 / (1.0 + mse(tmpOutput, outputs) + seisokuka * 0.00001);
+    fitness = 1.0 / (1.0 + mse(tmpOutput, outputs));
     
 //    std::vector<double> tmpVector = inputs[0];
 //    auto oIter = tmpOutput.begin();
@@ -145,6 +145,7 @@ std::vector<double> Firefly::output(const std::vector<double> &input) const {
         }
         ++wIIter;
         ++tVIter;
+        
     }
     
 #ifndef BIAS_DISABLE
@@ -161,8 +162,8 @@ std::vector<double> Firefly::output(const std::vector<double> &input) const {
     return output;
 }
 
-const double Firefly::function(const double &spreads, const std::vector<double> &centerVector, const std::vector<double> &x) const {
-    return exp(- spreads * squeredNorm(centerVector, x));
+const double Firefly::function(const double &spread, const std::vector<double> &centerVector, const std::vector<double> &x) const {
+    return  exp(- spread * squeredNorm(centerVector, x));
 }
 
 const double Firefly::mse(const std::vector<std::vector<double>> &d, const std::vector<std::vector<double>> &o) const {
@@ -175,7 +176,8 @@ const double Firefly::mse(const std::vector<std::vector<double>> &d, const std::
         auto ms_dJIterEnd = (*ms_dIIter).end();
         auto ms_oJIter = (*ms_oIIter).begin();
         while (ms_dJIter != ms_dJIterEnd) {
-            mse += (*ms_dJIter - *ms_oJIter) * (*ms_dJIter - *ms_oJIter);
+            double tmp = (*ms_dJIter - *ms_oJIter);
+            mse += tmp * tmp;
             ++ms_dJIter;
             ++ms_oJIter;
         }
@@ -192,7 +194,8 @@ const double Firefly::squeredNorm(const std::vector<double> &a, const std::vecto
     auto no_xIterEnd = a.end();
     auto no_yIter = b.begin();
     while (no_xIter != no_xIterEnd) {
-        d += ((*no_xIter) - (*no_yIter)) * ((*no_xIter) - (*no_yIter));
+        double tmp = (*no_xIter) - (*no_yIter);
+        d += tmp * tmp;
         ++no_xIter;
         ++no_yIter;
     }
@@ -241,7 +244,8 @@ const double Firefly::normToFirefly(const Firefly &firefly) const {
         auto di_w1JIterEnd = (*di_w1IIter).end();
         auto di_w2JIter = (*di_w2IIter).begin();
         while (di_w1JIter != di_w1JIterEnd) {
-            radius = ((*di_w1JIter) - (*di_w2JIter)) * ((*di_w1JIter) - (*di_w2JIter));
+            double d = (*di_w1JIter) - (*di_w2JIter);
+            radius = d * d;
             ++di_w1JIter;
             ++di_w2JIter;
         }
@@ -257,7 +261,8 @@ const double Firefly::normToFirefly(const Firefly &firefly) const {
         auto di_c1JIterEnd = (*di_c1IIter).end();
         auto di_c2JIter = (*di_c2IIter).begin();
         while (di_c1JIter != di_c1JIterEnd) {
-            radius = ((*di_c1JIter) - (*di_c2JIter)) * ((*di_c1JIter) - (*di_c2JIter));
+            double d = (*di_c1JIter) - (*di_c2JIter);
+            radius = d * d;
             ++di_c1JIter;
             ++di_c2JIter;
         }
@@ -269,7 +274,8 @@ const double Firefly::normToFirefly(const Firefly &firefly) const {
     auto di_s1IterEnd = spreads.end();
     auto di_s2Iter = firefly.spreads.begin();
     while (di_s1Iter != di_s1IterEnd) {
-        radius += ((*di_s1Iter) - (*di_s2Iter)) * ((*di_s1Iter) - (*di_s2Iter));
+        double d = (*di_s1Iter) - (*di_s2Iter);
+        radius += d * d * 0.01;
         ++di_s1Iter;
         ++di_s2Iter;
     }
@@ -279,7 +285,8 @@ const double Firefly::normToFirefly(const Firefly &firefly) const {
     auto di_b1IterEnd = biases.end();
     auto di_b2Iter = firefly.biases.begin();
     while (di_b1Iter != di_b1IterEnd) {
-        radius += ((*di_b1Iter) - (*di_b2Iter)) * ((*di_b1Iter) - (*di_b2Iter));
+        double d = (*di_b1Iter) - (*di_b2Iter);
+        radius += d * d;
         ++di_b1Iter;
         ++di_b2Iter;
     }
@@ -330,7 +337,6 @@ void Firefly::moveToFirefly(const Firefly &firefly, double &alpha, std::mt19937 
     auto mo_sDIter = firefly.spreads.begin();
     while (mo_sIter != mo_sIterEnd) {
         (*mo_sIter) = cbeta * (*mo_sIter) + beta * (*mo_sDIter) + alpha * score(mt);
-//        (*mo_sIter) = cbeta * (*mo_sIter) + beta * (*mo_sDIter) + alpha * score(mt) / 100.0;
         ++mo_sIter;
         ++mo_sDIter;
     }
@@ -374,7 +380,7 @@ void Firefly::findLimits() {
         }
     }
     for (auto &value : spreads) {
-        if (value > ld) value = ld;
+        if (value > ud) value = ud;
         else if (value < zero) value = zero;
     }
     
@@ -384,16 +390,4 @@ void Firefly::findLimits() {
         else if (value < ld) value = ld;
     }
 #endif
-    
-//    double sud = -0.01;
-//    double sld = 0.01;
-//    for (auto &value : spreads) {
-//        if (value > sld) value = sld;
-//        else if (value < sud) value = sud;
-//    }
-//    for (auto &value : biases) {
-//        if (value > ud) value = ud;
-//        else if (value < ld) value = ld;
-//    }
-    
 }
