@@ -42,8 +42,6 @@ void FireflyRBFTraining::makeFireflyWithRandom() {
         for (auto &value : spreads) value = score(mt);
         std::vector<double> biases(dim);
         for (auto &value : biases) value = mscore(mt);
-        std::vector<double> alphas(rbfCount);
-        for (auto &value : alphas) value = mscore(mt);
         
         auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
         firefliesPtr.push_back(newPtr);
@@ -75,8 +73,6 @@ void FireflyRBFTraining::makeFireflyWithInput(const std::vector<std::vector<doub
         for (auto &value : spreads) value = score(mt) * 0.1;
         std::vector<double> biases(rbfCount);
         for (auto &value : biases) value = score(mt);
-        std::vector<double> alphas(rbfCount);
-        for (auto &value : alphas) value = mscore(mt);
         
         auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
         firefliesPtr.push_back(newPtr);
