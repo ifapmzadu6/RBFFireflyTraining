@@ -17,8 +17,6 @@ class Firefly
 public:
     //教師信号input,outputの次元
     int dim;
-    //教師信号input,outputのデータ数
-    int dataCount;
     //RBFの数
     int rbfCount;
     //適応度
@@ -41,7 +39,7 @@ public:
 public:
     //コンストラクタ
     Firefly();
-    Firefly(int dim, int dataCount, int rbfCount, double attractiveness, double attractivenessMin, double gumma, const std::vector<std::vector<double>> &weights, const std::vector<double> &spreads, const std::vector<std::vector<double>> &centerVectors, const std::vector<double> &biases);
+    Firefly(int dim, int rbfCount, double attractiveness, double attractivenessMin, double gumma, const std::vector<std::vector<double>> &weights, const std::vector<double> &spreads, const std::vector<std::vector<double>> &centerVectors, const std::vector<double> &biases);
     //コピーコンストラクタ
     Firefly(const Firefly &firefly);
     
@@ -57,13 +55,7 @@ public:
     void findLimits();
     
     //出力
-    std::vector<double> output(const std::vector<double> &input) const;
-    
-private:
-    const double function(const double &spread, const std::vector<double> &centerVector, const std::vector<double> &x) const;
-    const double mse(const std::vector<std::vector<double>> &d, const std::vector<std::vector<double>> &o) const;
-    const double squeredNorm(const std::vector<double> &a, const std::vector<double> &b) const;
-    void mult(std::vector<std::vector<double>> &Y, const std::vector<std::vector<double>> &A, const std::vector<std::vector<double>> &B) const;
+    std::vector<double> output(const std::vector<double> &input) const;    
 };
 
 

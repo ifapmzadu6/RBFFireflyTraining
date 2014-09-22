@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		711183A219D010B400548730 /* RBF.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 711183A019D010B400548730 /* RBF.cpp */; };
 		7191BDA81815090000CE43E0 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7191BDA71815090000CE43E0 /* main.cpp */; };
 		7191BDAA1815090000CE43E0 /* FireflyProject.1 in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7191BDA91815090000CE43E0 /* FireflyProject.1 */; };
 		7191BDB6181518C700CE43E0 /* GLUT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7191BDB5181518C700CE43E0 /* GLUT.framework */; };
@@ -31,6 +32,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		711183A019D010B400548730 /* RBF.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = RBF.cpp; sourceTree = "<group>"; };
+		711183A119D010B400548730 /* RBF.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RBF.h; sourceTree = "<group>"; };
 		7191BDA41815090000CE43E0 /* FireflyProject */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = FireflyProject; sourceTree = BUILT_PRODUCTS_DIR; };
 		7191BDA71815090000CE43E0 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
 		7191BDA91815090000CE43E0 /* FireflyProject.1 */ = {isa = PBXFileReference; lastKnownFileType = text.man; name = FireflyProject.1; path = FireflyProject/FireflyProject.1; sourceTree = "<group>"; };
@@ -86,6 +89,8 @@
 				71E9B70518A20279003B6D90 /* File.h */,
 				71B988011883B5D700A67FCD /* Firefly.h */,
 				71B988021883B8CC00A67FCD /* Firefly.cpp */,
+				711183A119D010B400548730 /* RBF.h */,
+				711183A019D010B400548730 /* RBF.cpp */,
 				719A40C21817A263009D7EEE /* FireflyRBFTraining.h */,
 				71B987FF1883B58000A67FCD /* FireflyRBFTraining.cpp */,
 				71BFAD011857926900037F0C /* Wave.h */,
@@ -147,6 +152,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				711183A219D010B400548730 /* RBF.cpp in Sources */,
 				71B988031883B8CD00A67FCD /* Firefly.cpp in Sources */,
 				71BFAD051857941600037F0C /* analysis.cpp in Sources */,
 				71BFAD021857926900037F0C /* Wave.cpp in Sources */,

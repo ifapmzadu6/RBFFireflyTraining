@@ -43,7 +43,7 @@ void FireflyRBFTraining::makeFireflyWithRandom() {
         std::vector<double> biases(dim);
         for (auto &value : biases) value = mscore(mt);
         
-        auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
+        auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
         firefliesPtr.push_back(newPtr);
     }
 }
@@ -74,14 +74,14 @@ void FireflyRBFTraining::makeFireflyWithInput(const std::vector<std::vector<doub
         std::vector<double> biases(rbfCount);
         for (auto &value : biases) value = score(mt);
         
-        auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
+        auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
         firefliesPtr.push_back(newPtr);
     }
 }
 
 void FireflyRBFTraining::makeFireflyWithData(const std::vector<std::vector<double>> &weights, const std::vector<std::vector<double>> &centerVector, const std::vector<double> &spreads, const std::vector<double> &biases) {
     firefliesPtr.resize(0);
-    auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, dataCount, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
+    auto newPtr = std::shared_ptr<Firefly>(new Firefly(dim, rbfCount, attractiveness, attractivenessMin, gumma, weights, spreads, centerVector, biases));
     firefliesPtr.push_back(newPtr);
 }
 
@@ -121,17 +121,17 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
                     break;
                 }
             }
-            ptr->findLimits();
             ptr->calcFitness(inputs, outputs, asymt, asyeescore);
             ++iter;
         }
     };
     
-    //fitnessの計算
+    // Calc Fitness for Firefly.
     for (auto &firefly : firefliesPtr) firefly.get()->calcFitness(inputs, outputs, mt, eescore);
     std::sort(firefliesPtr.begin(), firefliesPtr.end(), compare);
     
     int iter = 0;
+    double alpha = alpha;
     double delta = pow((pow(10.0, -4.0) / 0.9), 1.0 / (double)maxGeneration);
     std::vector<std::shared_ptr<Firefly>> tmpFirefliesPtr(fireflyCount);
     std::vector<std::future<void>> task(num_thread);
@@ -141,9 +141,7 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
         
         alpha = delta * alpha;
         
-        std::random_shuffle(firefliesPtr.begin(), firefliesPtr.end());
-        
-        //Fireflyをコピーする。後でFireflyの移動に使う。
+        // Fireflyをコピーする。後でFireflyの移動に使う。
         auto it = firefliesPtr.begin();
         auto itE = firefliesPtr.end();
         auto itT = tmpFirefliesPtr.begin();
@@ -155,7 +153,6 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
         //最適なFireflyをランダムに移動させる
         Firefly *bestFirefly = firefliesPtr[0].get();
         bestFirefly->randomlyWalk(alpha, mt, score);
-        bestFirefly->findLimits();
         bestFirefly->calcFitness(inputs, outputs, mt, eescore);
         
         int begin = 0;
@@ -167,24 +164,21 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
         for (int i = 0; i < num_thread; i++) {
             count = (c - c * sqrt(a) / sqrt(b)) * fireflyCount;
             begin = (i < num_thread - 1) ? end - count : 1;
-//            std::cout << "begin = " << begin << "   end" << end << "   count" << count << std::endl;
             task[i] = std::async(moveFireflyAsync, begin, end, firefliesPtr, tmpFirefliesPtr, alpha);
             end = begin;
             c = c * sqrt(a) / sqrt(b);
             --a; --b;
-//            std::cout << "a = " << a << "    b = " << b << std::endl;
         }
         for (auto &f : task) f.wait();
         
-        //ソート
         std::sort(firefliesPtr.begin(), firefliesPtr.end(), compare);
+        
+        ++iter;
         
         auto end_time = std::chrono::high_resolution_clock::now();
         std::cout << "iter = " << iter << ", bestfitness = " << firefliesPtr[0].get()->fitness
         << "  [" << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - begin_time).count() << "ms]"
         << std::endl;
-        
-        ++iter;
     }
 }
 
