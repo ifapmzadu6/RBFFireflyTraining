@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     
     int dim = 3;
     int dataCount = 500;
-    int rbfCount = 100;
+    int rbfCount = 50;
     int fireflyCount = 200;
     int maxGeneration = 1000;
     int offset = 7;
@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
 	wav.StereoToMono();
 	wav.GetData(tmp);
 	GetFlucPeriod(fp, tmp);
-//    std::cout << fp.size() << std::endl;
+    std::cout << fp.size() << std::endl;
     
     // Nomilization
     double max = 0, min = std::numeric_limits<double>::max();
@@ -63,7 +63,7 @@ int main(int argc, char *argv[])
 	}
     
     // FireflyRBFTraining
-    FireflyRBFTraining fireflyRBF(dim, dataCount, rbfCount, fireflyCount, 1.0, 0.1, maxGeneration);
+    FireflyRBFTraining fireflyRBF(dim, rbfCount, fireflyCount, 1.0, 0.1, maxGeneration);
     fireflyRBF.makeFireflyWithRandom();
     vector<vector<double>> input;
     vector<vector<double>> output;
@@ -185,7 +185,7 @@ void useWaveSoundWithFireflyData () {
     //    std::vector<double> b;
     //    for (int i = 0; i < dim; i++) b.push_back(biases[i]);
     
-    FireflyRBFTraining fireflyRBF(dim, dataCount, rbfCount, fireflyCount, 1.0, 0.1, maxGeneration);
+    FireflyRBFTraining fireflyRBF(dim, rbfCount, fireflyCount, 1.0, 0.1, maxGeneration);
     fireflyRBF.makeFireflyWithRandom();
     //    fireflyRBF.makeFireflyWithInput(input);
     fireflyRBF.training(input, output);
@@ -287,7 +287,7 @@ void useLogisticMap () {
 //    std::vector<double> b;
 //    for (int i = 0; i < dim; i++) b.push_back(biases[i]);
     
-    FireflyRBFTraining fireflyRBF(dim, dataCount, rbfCount, fireflyCount, 1.0, 0.1, maxGeneration);
+    FireflyRBFTraining fireflyRBF(dim, rbfCount, fireflyCount, 1.0, 0.1, maxGeneration);
     fireflyRBF.makeFireflyWithRandom();
 //    fireflyRBF.makeFireflyWithInput(input);
 //    fireflyRBF.makeFireflyWithData(w, cv, s, a, b);

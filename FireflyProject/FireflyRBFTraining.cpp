@@ -14,8 +14,8 @@
 #include <future>
 
 
-FireflyRBFTraining::FireflyRBFTraining(int dim, int dataCount, int rbfCount, int fireflyCount, double attractiveness, double gumma, int maxGeneration)
-: dim(dim), dataCount(dataCount), rbfCount(rbfCount), fireflyCount(fireflyCount), attractiveness(attractiveness), gumma(gumma), maxGeneration(maxGeneration) {
+FireflyRBFTraining::FireflyRBFTraining(int dim, int rbfCount, int fireflyCount, double attractiveness, double gumma, int maxGeneration)
+: dim(dim), rbfCount(rbfCount), fireflyCount(fireflyCount), attractiveness(attractiveness), gumma(gumma), maxGeneration(maxGeneration) {
     this->attractivenessMin = 0.2;
     this->alpha = gumma;
 }
@@ -53,7 +53,7 @@ void FireflyRBFTraining::makeFireflyWithInput(const std::vector<std::vector<doub
     std::mt19937 mt(random());
     std::uniform_real_distribution<double> score(0.0, 1.0);
     std::uniform_real_distribution<double> mscore(-1.0, 1.0);
-    std::uniform_int_distribution<int> sscore(0, dataCount - 1);
+    std::uniform_int_distribution<int> sscore(0, (int)inputs.size() - 1);
     std::normal_distribution<double> nmscore(-1.0, 1.0);
     
     std::vector<double> newVector(dim);
@@ -90,13 +90,12 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
     std::cout << "Dimention = " << dim << " , RBFCount = " << rbfCount << " , FireflyCount = " << fireflyCount << " , MaxGeneration = " << maxGeneration << std::endl;
     std::cout << "[Start training!]" << std::endl;
     
-    num_thread = std::thread::hardware_concurrency();
-    
     std::random_device random;
     std::mt19937 mt(random());
     std::uniform_real_distribution<double> score(-1.0, 1.0);
     std::normal_distribution<double> nscore(-1.0, 1.0);
     std::uniform_real_distribution<double> eescore(0.0, 1.0);
+    std::size_t num_thread = std::thread::hardware_concurrency();
     
     auto compare = [](std::shared_ptr<Firefly> const &obj1, std::shared_ptr<Firefly> const &obj2) {
         return obj1.get()->fitness > obj2.get()->fitness;
@@ -117,9 +116,6 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
                 if (ptr->fitness < tmpPtr->fitness) {
                     ptr->moveToFirefly(*tmpPtr, alpha, asymt, asyscore);
                 }
-                else {
-                    break;
-                }
             }
             ptr->calcFitness(inputs, outputs, asymt, asyeescore);
             ++iter;
@@ -131,15 +127,14 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
     std::sort(firefliesPtr.begin(), firefliesPtr.end(), compare);
     
     int iter = 0;
-    double alpha = alpha;
-    double delta = pow((pow(10.0, -4.0) / 0.9), 1.0 / (double)maxGeneration);
+    double tmpAlpha = alpha;
+    double delta = pow((pow(10.0, -4.0) / 0.9), 1.0 / maxGeneration);
+    alpha = delta * alpha;
     std::vector<std::shared_ptr<Firefly>> tmpFirefliesPtr(fireflyCount);
     std::vector<std::future<void>> task(num_thread);
     
     while (iter < maxGeneration) {
         auto begin_time = std::chrono::high_resolution_clock::now();
-        
-        alpha = delta * alpha;
         
         // Fireflyをコピーする。後でFireflyの移動に使う。
         auto it = firefliesPtr.begin();
@@ -150,9 +145,12 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
             ++it; ++itT;
         }
         
+        // alphaの更新
+        tmpAlpha = delta * tmpAlpha;
+        
         //最適なFireflyをランダムに移動させる
         Firefly *bestFirefly = firefliesPtr[0].get();
-        bestFirefly->randomlyWalk(alpha, mt, score);
+        bestFirefly->randomlyWalk(tmpAlpha, mt, score);
         bestFirefly->calcFitness(inputs, outputs, mt, eescore);
         
         int begin = 0;
@@ -164,7 +162,7 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
         for (int i = 0; i < num_thread; i++) {
             count = (c - c * sqrt(a) / sqrt(b)) * fireflyCount;
             begin = (i < num_thread - 1) ? end - count : 1;
-            task[i] = std::async(moveFireflyAsync, begin, end, firefliesPtr, tmpFirefliesPtr, alpha);
+            task[i] = std::async(moveFireflyAsync, begin, end, firefliesPtr, tmpFirefliesPtr, tmpAlpha);
             end = begin;
             c = c * sqrt(a) / sqrt(b);
             --a; --b;
@@ -196,15 +194,11 @@ void FireflyRBFTraining::outputBestFirefly(std::ofstream &ofstream) {
         ofstream << "{";
         for (int i = 0; i < (*wIter).size(); i++) {
             ofstream << (*wIter)[i];
-            if (i < (*wIter).size() - 1) {
-                ofstream << ", ";
-            }
+            if (i < (*wIter).size() - 1) ofstream << ", ";
         }
         ofstream << "}";
         ++wIter;
-        if (wIter != bestFirefly->weights.end()) {
-            ofstream << ", ";
-        }
+        if (wIter != bestFirefly->weights.end()) ofstream << ", ";
     }
     ofstream << "};" << std::endl;
     
@@ -214,9 +208,7 @@ void FireflyRBFTraining::outputBestFirefly(std::ofstream &ofstream) {
         ofstream << "{";
         for (int i = 0; i < (*cIter).size(); i++) {
             ofstream << (*cIter)[i];
-            if (i < (*cIter).size() - 1) {
-                ofstream << ", ";
-            }
+            if (i < (*cIter).size() - 1) ofstream << ", ";
         }
         ofstream << "}";
         ++cIter;
@@ -231,9 +223,7 @@ void FireflyRBFTraining::outputBestFirefly(std::ofstream &ofstream) {
     while (sIter != bestFirefly->spreads.end()) {
         ofstream << *sIter;
         ++sIter;
-        if (sIter != bestFirefly->spreads.end()) {
-            ofstream << ", ";
-        }
+        if (sIter != bestFirefly->spreads.end()) ofstream << ", ";
     }
     ofstream << "};" << std::endl;
     
@@ -242,9 +232,7 @@ void FireflyRBFTraining::outputBestFirefly(std::ofstream &ofstream) {
     while (bIter != bestFirefly->biases.end()) {
         ofstream << *bIter;
         ++bIter;
-        if (bIter != bestFirefly->biases.end()) {
-            ofstream << ", ";
-        }
+        if (bIter != bestFirefly->biases.end()) ofstream << ", ";
     }
     ofstream << "};" << std::endl;
 }

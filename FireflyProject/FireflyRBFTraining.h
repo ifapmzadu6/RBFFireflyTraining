@@ -22,8 +22,6 @@ private:
     int maxGeneration;
     //教師信号input,outputの次元
     int dim;
-    //教師信号input,outputのデータ数
-    int dataCount;
     //RBFの数
     int rbfCount;
     //firefly
@@ -41,7 +39,7 @@ private:
     
 public:
     //コンストラクタ
-    FireflyRBFTraining(int dim, int dataCount, int rbfCount, int fireflyCount, double attractiveness, double gumma, int maxGeneration);
+    FireflyRBFTraining(int dim, int rbfCount, int fireflyCount, double attractiveness, double gumma, int maxGeneration);
     
     //Fireflyの初期化
     void makeFireflyWithRandom();
@@ -56,10 +54,7 @@ public:
     //一番いい結果のFireflyで出力
     std::vector<double> output(const std::vector<double> &input);
     //一番いい結果のFireflyを出力
-    void outputBestFirefly(std::ofstream &output);
-    
-    //マルチスレッド関係
-    std::size_t num_thread;    
+    void outputBestFirefly(std::ofstream &output);    
 };
 
 #endif

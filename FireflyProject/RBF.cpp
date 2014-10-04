@@ -26,11 +26,9 @@ double mse(const std::vector<std::vector<double>> &d, const std::vector<std::vec
         while (ms_dJIter != ms_dJIterEnd) {
             double tmp = (*ms_dJIter - *ms_oJIter);
             mse += tmp * tmp;
-            ++ms_dJIter;
-            ++ms_oJIter;
+            ++ms_dJIter; ++ms_oJIter;
         }
-        ++ms_dIIter;
-        ++ms_oIIter;
+        ++ms_dIIter; ++ms_oIIter;
     }
     mse /= d.size();
     return mse;
@@ -44,8 +42,7 @@ double squeredNorm(const std::vector<double> &a, const std::vector<double> &b) {
     while (no_xIter != no_xIterEnd) {
         double tmp = (*no_xIter) - (*no_yIter);
         d += tmp * tmp;
-        ++no_xIter;
-        ++no_yIter;
+        ++no_xIter; ++no_yIter;
     }
     return d;
 }
@@ -70,14 +67,11 @@ void mult(std::vector<std::vector<double>> &Y, const std::vector<std::vector<dou
             auto mu_wJIter = (*mu_wKIter).begin();
             while (mu_oJIter != mu_oJIterEnd) {
                 (*mu_oJIter) += (*mu_rKIter) * (*mu_wJIter);
-                ++mu_oJIter;
-                ++mu_wJIter;
+                ++mu_oJIter; ++mu_wJIter;
             }
-            ++mu_rKIter;
-            ++mu_wKIter;
+            ++mu_rKIter; ++mu_wKIter;
         }
-        ++mu_oIIter;
-        ++mu_rIIter;
+        ++mu_oIIter; ++mu_rIIter;
     }
 }
 

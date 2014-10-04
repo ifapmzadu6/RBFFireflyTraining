@@ -9,7 +9,6 @@
 #ifndef __FireflyProject__RBF__
 #define __FireflyProject__RBF__
 
-
 #include <cmath>
 #include <vector>
 
