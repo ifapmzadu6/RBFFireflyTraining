@@ -95,7 +95,8 @@ void FireflyRBFTraining::training(const std::vector<std::vector<double>> &inputs
     std::uniform_real_distribution<double> score(-1.0, 1.0);
     std::normal_distribution<double> nscore(-1.0, 1.0);
     std::uniform_real_distribution<double> eescore(0.0, 1.0);
-    std::size_t num_thread = std::thread::hardware_concurrency();
+//    std::size_t num_thread = std::thread::hardware_concurrency();
+    std::size_t num_thread = std::thread::hardware_concurrency() / 2;
     
     auto compare = [](std::shared_ptr<Firefly> const &obj1, std::shared_ptr<Firefly> const &obj2) {
         return obj1.get()->fitness > obj2.get()->fitness;

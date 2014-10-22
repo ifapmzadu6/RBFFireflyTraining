@@ -35,8 +35,8 @@ int main(int argc, char *argv[])
     int dim = 3;
     int dataCount = 500;
     int rbfCount = 50;
-    int fireflyCount = 200;
-    int maxGeneration = 1000;
+    int fireflyCount = 500;
+    int maxGeneration = 100;
     int offset = 7;
     int startDataCount = 100;
     
@@ -70,8 +70,8 @@ int main(int argc, char *argv[])
     
     // Start Training.
     int index = 1;
-    int increasement = 5;
-    while (true) {
+    int increasement = 50;
+    while (increasement*index < dataCount) {
         input.clear();
         output.clear();
         for (int i = 0; i < increasement*index; i++) {
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
     ofstream fireflyOfs("bestFirefly.txt");
     fireflyRBF.outputBestFirefly(fireflyOfs);
     fireflyOfs.close();
-
+    
     ofstream ofs("temp.txt");
     vector<double> tmpInput(dim);
     vector<double> tmpInputPushed(dim);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
     };
     ofs.close();
     
-    std::system("/opt/local/bin/gnuplot -persist -e \" p 'temp.txt' u 1:2 w l, '' u 1:3 w lp, '' u 1:4 w l \"");
+    std::system("/usr/local/bin/gnuplot -persist -e \" p 'temp.txt' u 1:2 w l, '' u 1:3 w lp, '' u 1:4 w l \"");
     
     return 0;
 }

@@ -41,32 +41,8 @@ void Firefly::calcFitness(const std::vector<std::vector<double>> &inputs, const 
         ++cr_rIIter; ++cr_iIter;
     }
     
-//    std::vector<std::vector<double>> tmpWeights = weights;
-//    
-//    for (auto &vec : tmpWeights) {
-//        for (auto &value : vec) {
-//            if (score(mt) < 0.05) {
-//                value = 0.0;
-//            }
-//        }
-//    }
-    
-//    double seisokuka = 0.0;
-//    for (auto &vec : weights) {
-//        for (auto &value : vec) {
-//            seisokuka += (value * value);
-//        }
-//    }
-//    
-//    for (double &value : spreads) {
-//        seisokuka += (value * value);
-//    }
-//    
-//    seisokuka /= (rbfCount * dim + rbfCount);
-    
     std::vector<std::vector<double>> tmpOutput(outputs.size(), std::vector<double>(dim, 0.0));
     mult(tmpOutput, tmpRbfOutput, weights);
-//    mult(tmpOutput, tmpRbfOutput, tmpWeights);
     
     auto cf_oIIter = tmpOutput.begin();
     auto cf_oIIterEnd = tmpOutput.end();
@@ -81,34 +57,7 @@ void Firefly::calcFitness(const std::vector<std::vector<double>> &inputs, const 
         ++cf_oIIter;
     }
     
-    fitness = 1.0 / (1.0 + mse(tmpOutput, outputs));
-    
-//    std::vector<double> tmpVector = inputs[0];
-//    auto oIter = tmpOutput.begin();
-//    auto oIterEnd = tmpOutput.end();
-//    while (oIter != oIterEnd) {
-//        (*oIter) = output(tmpVector);
-//        
-//        auto vIter = tmpVector.begin();
-//        auto vIterEnd = tmpVector.end();
-//        while (vIter != (vIterEnd - 1)) {
-//            (*vIter) = *(vIter + 1);
-//            ++vIter;
-//        }
-//        (*vIter) = (*oIter)[dim - 1];
-//        if (isnan(*vIter)) {
-//            fitness = 0.0;
-//            return;
-//        }
-//        ++oIter;
-//    }
-    
-//    for (int i = 0; i < dataCount; i++) {
-//        tmpVector = output(tmpVector);
-//        std::copy(tmpVector.begin(), tmpVector.end(), tmpOutput[i].begin());
-//    }
-    
-//    fitness += (1.0 / (1.0 + mse(tmpOutput, outputs))) / 20.0;
+    fitness = 1.0 / (1.0 + mse(tmpOutput, outputs));    
 }
 
 std::vector<double> Firefly::output(const std::vector<double> &input) const {
@@ -186,7 +135,7 @@ const double Firefly::normToFirefly(const Firefly &firefly) const {
     auto di_s2Iter = firefly.spreads.begin();
     while (di_s1Iter != di_s1IterEnd) {
         double d = (*di_s1Iter) - (*di_s2Iter);
-        radius += d * d * 0.01;
+        radius += d * d;
         ++di_s1Iter; ++di_s2Iter;
     }
     
